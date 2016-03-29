@@ -6,25 +6,26 @@ export default class TextTruncate extends Component {
         truncateText: React.PropTypes.string,
         line: React.PropTypes.number,
         showTitle: React.PropTypes.bool,
-        textTruncateChild: React.PropTypes.node,
-        raf: React.PropTypes.bool
+        title: React.PropTypes.string
     };
 
     static defaultProps = {
         text: '',
         truncateText: '…',
         line: 1,
-        showTitle: true,
-        raf: true
+        showTitle: true
     };
 
+    constructor() {
+        super();
+        this.onResize = this.onResize.bind(this);
+    }
     componentWillMount() {
         let canvas = document.createElement('canvas');
         let docFragment = document.createDocumentFragment();
         docFragment.appendChild(canvas);
         this.canvas = canvas.getContext('2d');
     }
-
     componentDidMount() {
         let style = window.getComputedStyle(this.refs.scope);
         let font = [];
@@ -34,41 +35,17 @@ export default class TextTruncate extends Component {
         font.push(style['font-family']);
         this.canvas.font = font.join(' ');
         this.forceUpdate();
-
-        if (this.props.raf) {
-          this.loopId = window.requestAnimationFrame(this.animationStep);
-        } else {
-          window.addEventListener('resize', this.onResize);
-        }
+        window.addEventListener('resize', this.onResize);
     }
-
     componentWillUnmount() {
-        if (this.props.raf) {
-            window.cancelAnimationFrame(this.loopId);
-        } else {
-            window.removeEventListener('resize', this.onResize);
-        }
+        window.removeEventListener('resize', this.onResize);
     }
-
-    animationStep = (timeStamp) => {
-        if ((timeStamp - this.lastTime) < 150) {
-            this.loopId = window.requestAnimationFrame(this.animationStep);
-            return;
-        }
-
-        this.lastTime = timeStamp;
-        this.onResize();
-        this.loopId = window.requestAnimationFrame(this.animationStep);
-    };
-
-    onResize = () => {
+    onResize() {
         this.forceUpdate();
-    };
-
+    }
     measureWidth(text) {
         return this.canvas.measureText(text).width;
     }
-
     getRenderText() {
         let textWidth = this.measureWidth(this.props.text);
         let ellipsisWidth = this.measureWidth(this.props.truncateText);
@@ -108,7 +85,6 @@ export default class TextTruncate extends Component {
                       : this.props.text.substr(0, startPos - 1) + this.props.truncateText;
         }
     }
-
     render() {
         let text = '';
         if (this.refs.scope) {
@@ -118,14 +94,11 @@ export default class TextTruncate extends Component {
             ref: 'scope'
         };
         if (this.props.showTitle) {
-            attrs.title = this.props.text;
+            attrs.title = this.props.title;
         }
 
         return (
-            <div>
-                <div {...attrs}>{text}</div>
-                {this.props.textTruncateChild}
-            </div>
+            <div {...attrs}>{text}</div>
         );
     }
 };
